@@ -101,7 +101,7 @@ def signal_handler(_signal, _frame):
 
 signal.signal(signal.SIGTERM, signal_handler)
 
-ffrundir = f'{os.path.expanduser('~')}/log/douyin'
+ffrundir = f'{os.path.expanduser("~")}/log/douyin'
 if not os.path.exists(ffrundir):
     os.makedirs(ffrundir)
 
