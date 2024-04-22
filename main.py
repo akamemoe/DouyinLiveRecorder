@@ -28,7 +28,6 @@ from urllib.error import URLError, HTTPError
 from typing import Any, Union
 import configparser
 import logging
-
 from spider import (
     get_douyin_stream_data,
     get_tiktok_stream_data,
@@ -102,8 +101,11 @@ def signal_handler(_signal, _frame):
 
 signal.signal(signal.SIGTERM, signal_handler)
 
+ffrundir = f'{os.path.expanduser('~')}/log/douyin'
+if not os.path.exists(ffrundir):
+    os.makedirs(ffrundir)
 
-logging.basicConfig(filename=f'{os.path.expanduser('~')}/log/douyin/run.log',
+logging.basicConfig(filename=f'{ffrundir}/run.log',
     format='%(asctime)s - %(levelname)s - %(filename)s:%(lineno)3d: %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
     level=logging.INFO)
@@ -112,7 +114,6 @@ log = logging.getLogger('main')
 def runwarpper(*args,**kwargs):
     log.info(f'FFMPEG ARGUMENTS:{args}')
     subprocess.run(*args,**kwargs)
-
 
 def display_info():
     # TODO: 显示当前录制配置信息
@@ -1212,8 +1213,8 @@ def start_record(url_data: tuple, count_variable: int = -1):
                                             ]
 
                                         ffmpeg_command.extend(command)
-                                        _output = subprocess.check_output(ffmpeg_command, stderr=subprocess.STDOUT)
-
+                                        runwarpper(ffmpeg_command, stderr=subprocess.STDOUT)
+                                        record_finished = True
                                     except subprocess.CalledProcessError as e:
                                         logger.warning(f"错误信息: {e} 发生错误的行数: {e.__traceback__.tb_lineno}")
                                         warning_count += 1
@@ -1241,7 +1242,7 @@ def start_record(url_data: tuple, count_variable: int = -1):
                                                 save_path_name,
                                             ]
                                             ffmpeg_command.extend(command)
-                                            _output = subprocess.check_output(ffmpeg_command, stderr=subprocess.STDOUT)
+                                            runwarpper(ffmpeg_command, stderr=subprocess.STDOUT)
                                             record_finished = True
 
                                         else:
@@ -1249,15 +1250,19 @@ def start_record(url_data: tuple, count_variable: int = -1):
                                             print(f'{rec_info}/{filename}')
                                             save_file_path = full_path + '/' + filename
 
-                                    try:
-                                        command = [
-                                            "-map", "0:a",
-                                            "-c:a", "copy",
-                                            "-f", "matroska",
-                                            "{path}".format(path=save_file_path),
-                                        ]
-                                        ffmpeg_command.extend(command)
-                                        _output = subprocess.check_output(ffmpeg_command, stderr=subprocess.STDOUT)
+                                            command = [
+                                                "-map", "0:a",
+                                                "-c:a", "copy",
+                                                "-f", "segment",
+                                                "-segment_time", split_time,
+                                                "-segment_format", "matroska",
+                                                "-reset_timestamps", "1",
+                                                save_file_path,
+                                            ]
+
+                                            ffmpeg_command.extend(command)
+                                            runwarpper(ffmpeg_command, stderr=subprocess.STDOUT)
+                                            record_finished = True
 
                                             if ts_to_m4a:
                                                 threading.Thread(target=converts_m4a, args=(save_file_path,)).start()
@@ -1289,7 +1294,7 @@ def start_record(url_data: tuple, count_variable: int = -1):
                                                 save_path_name,
                                             ]
                                             ffmpeg_command.extend(command)
-                                            _output = subprocess.check_output(ffmpeg_command, stderr=subprocess.STDOUT)
+                                            runwarpper(ffmpeg_command, stderr=subprocess.STDOUT)
                                             record_finished = True
 
                                         else:
@@ -1297,15 +1302,16 @@ def start_record(url_data: tuple, count_variable: int = -1):
                                             print(f'{rec_info}/{filename}')
                                             save_file_path = full_path + '/' + filename
 
-                                    try:
-                                        command = [
-                                            "-map", "0:a",
-                                            "-c:a", "copy",
-                                            "-f", "mpegts",
-                                            "{path}".format(path=save_file_path),
-                                        ]
-                                        ffmpeg_command.extend(command)
-                                        _output = subprocess.check_output(ffmpeg_command, stderr=subprocess.STDOUT)
+                                            command = [
+                                                "-map", "0:a",
+                                                "-c:a", "copy",
+                                                "-f", "mpegts",
+                                                "{path}".format(path=save_file_path),
+                                            ]
+
+                                            ffmpeg_command.extend(command)
+                                            runwarpper(ffmpeg_command, stderr=subprocess.STDOUT)
+                                            record_finished = True
 
                                             if ts_to_m4a:
                                                 threading.Thread(target=converts_m4a, args=(save_file_path,)).start()
@@ -1341,8 +1347,8 @@ def start_record(url_data: tuple, count_variable: int = -1):
                                             ]
 
                                             ffmpeg_command.extend(command)
-                                            _output = subprocess.check_output(ffmpeg_command,
-                                                                              stderr=subprocess.STDOUT)
+                                            runwarpper(ffmpeg_command, stderr=subprocess.STDOUT)
+                                            record_finished = True
 
                                         except subprocess.CalledProcessError as e:
                                             logger.warning(
@@ -1373,7 +1379,8 @@ def start_record(url_data: tuple, count_variable: int = -1):
                                             ]
 
                                             ffmpeg_command.extend(command)
-                                            _output = subprocess.check_output(ffmpeg_command, stderr=subprocess.STDOUT)
+                                            runwarpper(ffmpeg_command, stderr=subprocess.STDOUT)
+                                            record_finished = True
 
                                             if ts_to_mp4:
                                                 threading.Thread(target=converts_mp4, args=(save_file_path,)).start()
