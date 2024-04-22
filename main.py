@@ -27,6 +27,7 @@ import urllib.request
 from urllib.error import URLError, HTTPError
 from typing import Any, Union
 import configparser
+import logging
 
 from spider import (
     get_douyin_stream_data,
@@ -102,6 +103,17 @@ def signal_handler(_signal, _frame):
 signal.signal(signal.SIGTERM, signal_handler)
 
 
+logging.basicConfig(filename=f'{os.path.expanduser('~')}/log/douyin/run.log',
+    format='%(asctime)s - %(levelname)s - %(filename)s:%(lineno)3d: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    level=logging.INFO)
+log = logging.getLogger('main')
+
+def runwarpper(*args,**kwargs):
+    log.info(f'FFMPEG ARGUMENTS:{args}')
+    subprocess.run(*args,**kwargs)
+
+
 def display_info():
     # TODO: 显示当前录制配置信息
     global start_display_time
@@ -173,7 +185,7 @@ def update_file(file_path: str, old_str: str, new_str: str, start_str: str = Non
 
 def converts_mp4(address: str):
     if ts_to_mp4:
-        _output = subprocess.check_output([
+        runwarpper([
             "ffmpeg", "-i", address,
             "-c:v", "copy",
             "-c:a", "copy",
@@ -187,7 +199,7 @@ def converts_mp4(address: str):
 
 def converts_m4a(address: str):
     if ts_to_m4a:
-        _output = subprocess.check_output([
+        runwarpper([
             "ffmpeg", "-i", address,
             "-n", "-vn",
             "-c:a", "aac", "-bsf:a", "aac_adtstoasc", "-ab", "320k",
@@ -1149,7 +1161,7 @@ def start_record(url_data: tuple, count_variable: int = -1):
                                             ]
                                         ffmpeg_command.extend(command)
 
-                                        _output = subprocess.check_output(ffmpeg_command, stderr=subprocess.STDOUT)
+                                        runwarpper(ffmpeg_command, stderr=subprocess.STDOUT)
 
                                     except subprocess.CalledProcessError as e:
                                         logger.warning(f"错误信息: {e} 发生错误的行数: {e.__traceback__.tb_lineno}")
@@ -1193,7 +1205,7 @@ def start_record(url_data: tuple, count_variable: int = -1):
                                             ]
 
                                         ffmpeg_command.extend(command)
-                                        _output = subprocess.check_output(ffmpeg_command, stderr=subprocess.STDOUT)
+                                        runwarpper(ffmpeg_command, stderr=subprocess.STDOUT)
 
                                     except subprocess.CalledProcessError as e:
                                         logger.warning(f"错误信息: {e} 发生错误的行数: {e.__traceback__.tb_lineno}")
@@ -1213,7 +1225,7 @@ def start_record(url_data: tuple, count_variable: int = -1):
                                             "{path}".format(path=save_file_path),
                                         ]
                                         ffmpeg_command.extend(command)
-                                        _output = subprocess.check_output(ffmpeg_command, stderr=subprocess.STDOUT)
+                                        runwarpper(ffmpeg_command, stderr=subprocess.STDOUT)
 
                                         if ts_to_m4a:
                                             threading.Thread(target=converts_m4a, args=(save_file_path,)).start()
@@ -1235,7 +1247,7 @@ def start_record(url_data: tuple, count_variable: int = -1):
                                             "{path}".format(path=save_file_path),
                                         ]
                                         ffmpeg_command.extend(command)
-                                        _output = subprocess.check_output(ffmpeg_command, stderr=subprocess.STDOUT)
+                                        runwarpper(ffmpeg_command, stderr=subprocess.STDOUT)
 
                                         if ts_to_m4a:
                                             threading.Thread(target=converts_m4a, args=(save_file_path,)).start()
@@ -1272,8 +1284,7 @@ def start_record(url_data: tuple, count_variable: int = -1):
                                             ]
 
                                             ffmpeg_command.extend(command)
-                                            _output = subprocess.check_output(ffmpeg_command,
-                                                                              stderr=subprocess.STDOUT)
+                                            runwarpper(ffmpeg_command, stderr=subprocess.STDOUT)
 
                                         except subprocess.CalledProcessError as e:
                                             logger.warning(
@@ -1304,7 +1315,7 @@ def start_record(url_data: tuple, count_variable: int = -1):
                                             ]
 
                                             ffmpeg_command.extend(command)
-                                            _output = subprocess.check_output(ffmpeg_command, stderr=subprocess.STDOUT)
+                                            runwarpper(ffmpeg_command, stderr=subprocess.STDOUT)
 
                                             if ts_to_mp4:
                                                 threading.Thread(target=converts_mp4, args=(save_file_path,)).start()
