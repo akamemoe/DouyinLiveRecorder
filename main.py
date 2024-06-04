@@ -296,30 +296,31 @@ def get_douyin_stream_url(json_data: dict, video_quality: str) -> dict:
 
     if status == 2:
         stream_url = json_data['stream_url']
-        flv_url_list = stream_url['flv_pull_url']
-        m3u8_url_list = stream_url['hls_pull_url_map']
+        flv_url_dict = stream_url['flv_pull_url']
+        flv_url_list = list(flv_url_dict.values())
+        m3u8_url_dict = stream_url['hls_pull_url_map']
+        m3u8_url_list = list(m3u8_url_dict.values())
 
-        # video_qualities = {
-        #     "原画": "FULL_HD1",
-        #     "蓝光": "FULL_HD1",
-        #     "超清": "HD1",
-        #     "高清": "SD1",
-        #     "标清": "SD2",
-        # }
+        top_qn = stream_url['live_core_sdk_data']['pull_data']['options']['qualities'][-1]['name']
+        if top_qn == '原画':
+            flv_url_head, flv_url_tail = flv_url_list[-1].split('.flv')
+            flv_url_list = [flv_url_head.rsplit('_', maxsplit=1)[0] + '.flv' + flv_url_tail] + flv_url_list
+            m3u8_url_head, m3u8_url_tail = m3u8_url_list[-1].split('.m3u8')
+            m3u8_url_list = [m3u8_url_head.rsplit('_', maxsplit=1)[0] + '/index.m3u8' + m3u8_url_tail] + m3u8_url_list
 
-        quality_list: list = list(m3u8_url_list.keys())
-        while len(quality_list) < 4:
-            quality_list.append(quality_list[-1])
-        video_qualities = {"原画": 0, "蓝光": 0, "超清": 1, "高清": 2, "标清": 3}
+        while len(flv_url_list) < 5:
+            flv_url_list.append(flv_url_list[-1])
+            m3u8_url_list.append(m3u8_url_list[-1])
+
+        video_qualities = {"原画": 0, "蓝光": 0, "超清": 1, "高清": 2, "标清": 3, "流畅": 4}
         quality_index = video_qualities.get(video_quality)
-        quality_key = quality_list[quality_index]
-        m3u8_url = m3u8_url_list.get(quality_key)
-        flv_url = flv_url_list.get(quality_key)
+        m3u8_url = m3u8_url_list[quality_index]
+        flv_url = flv_url_list[quality_index]
 
         result['m3u8_url'] = m3u8_url
         result['flv_url'] = flv_url
         result['is_live'] = True
-        result['record_url'] = m3u8_url  # 使用 m3u8 链接进行录制
+        result['record_url'] = m3u8_url
     return result
 
 
